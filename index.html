@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Swing Space — Lightweight swing trading portfolio tracker for Indian equity traders">
+  <title>Swing Space — Swing Trading Portfolio Tracker</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* ============ TOKENS ============ */
+    :root {
+      --bg:          #f6f6f6;
+      --bg2:         #f8fafc;
+      --surface:     #f1f5f9;
+      --card:        #ffffff;
+      --border:      #e2e8f0;
+      --border2:     #f1f5f9;
+      --text:        #0f172a;
+      --muted:       #64748b;
+      --faint:       #94a3b8;
+      --primary:     #0f766e;
+      --primary-h:   #0d9488;
+      --primary-bg:  #f0fdfa;
+      --gain:        #059669;
+      --gain-bg:     #ecfdf5;
+      --loss:        #e11d48;
+      --loss-bg:     #fff1f2;
+      --warn:        #d97706;
+      --warn-bg:     #fffbeb;
+      --shadow:      0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.06);
+      --shadow-lg:   0 8px 32px rgba(0,0,0,.10);
+      --radius:      12px;
+      --radius-sm:   8px;
+      --radius-lg:   16px;
+      --font-d:      'Instrument Sans', sans-serif;
+      --font-b:      'Inter', sans-serif;
+      --font-m:      'JetBrains Mono', monospace;
+      --header-h:    64px;
+      --max-w:       1300px;
+    }
+    [data-theme="dark"] {
+      --bg:          #0d1117;
+      --bg2:         #161b22;
+      --surface:     #21262d;
+      --card:        #161b22;
+      --border:      #30363d;
+      --border2:     #21262d;
+      --text:        #e6edf3;
+      --muted:       #8b949e;
+      --faint:       #6e7681;
+      --primary:     #2dd4bf;
+      --primary-h:   #5eead4;
+      --primary-bg:  #042f2e;
+      --gain:        #3fb950;
+      --gain-bg:     #0d2e1a;
+      --loss:        #f85149;
+      --loss-bg:     #2e0f0f;
+      --warn:        #e3b341;
+      --warn-bg:     #2d2000;
+      --shadow:      0 1px 3px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.3);
+      --shadow-lg:   0 8px 32px rgba(0,0,0,.5);
+    }
+
+    /* ============ RESET ============ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-b);
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+      background: rgb(246, 246, 246);
+      transition: background .25s, color .25s;
+      -webkit-font-smoothing: antialiased;
+    }
+    [data-theme="dark"] body { background: var(--bg); }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; font-family: inherit; border: none; background: none; }
+    input, select, textarea { font-family: inherit; }
+    img { display: block; max-width: 100%; }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ============ HEADER ============ */
+    .header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+    .header-inner {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 0 24px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .logo-mark {
+      width: 34px;
+      height: 34px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-d);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: -0.5px;
+    }
+    .logo-text {
+      font-family: var(--font-d);
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+    .logo-text span { color: var(--primary); }
+
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+    }
+    .nav-tab {
+      height: 36px;
+      padding: 0 16px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-b);
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    [data-theme="light"] .nav-tab:hover  { color: #0f172a; background: #f1f5f9; }
+    [data-theme="dark"]  .nav-tab:hover  { color: #e6edf3; background: #21262d; }
+    [data-theme="light"] .nav-tab.active { color: var(--primary); background: #f0fdfa; font-weight: 600; }
+    [data-theme="dark"]  .nav-tab.active { color: #2dd4bf;        background: #042f2e; font-weight: 600; }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      transition: all .15s;
+      position: relative;
+    }
+    .icon-btn:hover { color: var(--text); background: var(--surface); }
+    .icon-btn svg { width: 18px; height: 18px; }
+    .icon-btn input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      font-size: 0;
+    }
+
+    /* ============ MAIN ============ */
+    .main {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: calc(var(--header-h) + 32px) 24px 80px;
+      min-height: 100vh;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ============ PAGE HEADER ============ */
+    .page-header {
+      margin-bottom: 28px;
+    }
+    .page-header h1 {
+      font-family: var(--font-d);
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+    .page-header p {
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 14px;
+    }
+
+    /* ============ STAT CARDS ============ */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      box-shadow: var(--shadow);
+    }
+    .stat-label {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--faint);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-family: var(--font-m);
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+    .stat-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .stat-card.gain .stat-value { color: var(--gain); }
+    .stat-card.loss .stat-value { color: var(--loss); }
+    .stat-card.primary .stat-value { color: var(--primary); }
+
+    /* ============ CHARTS ROW ============ */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      box-shadow: var(--shadow);
+    }
+    .chart-card-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .chart-title {
+      font-family: var(--font-d);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .chart-sub {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .chart-wrap { position: relative; height: 220px; }
+    .chart-wrap-sm { position: relative; height: 200px; }
+
+    /* ============ TABLE ============ */
+    .table-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .table-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .table-card-title {
+      font-family: var(--font-d);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left;
+      padding: 11px 16px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--faint);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+      white-space: nowrap;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border2);
+      font-size: 13.5px;
+      white-space: nowrap;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg2); }
+    #positions-list-view tr:hover td {
+      background: var(--surface);
+    }
+    [data-theme="dark"] #positions-list-view tr:hover td {
+      background: #1e2430;
+    }
+    .td-mono { font-family: var(--font-m); font-size: 13px; }
+    .td-symbol {
+      font-family: var(--font-d);
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .td-gain { color: var(--gain); font-family: var(--font-m); font-size: 13px; }
+    .td-loss { color: var(--loss); font-family: var(--font-m); font-size: 13px; }
+    .td-muted { color: var(--muted); }
+    .td-link { color: var(--primary); cursor: pointer; }
+    .td-link:hover { text-decoration: underline; }
+
+    /* ============ BADGE / CHIPS ============ */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .badge-open  { background: var(--primary-bg); color: var(--primary); }
+    .badge-closed { background: var(--surface); color: var(--muted); }
+    .badge-gain  { background: var(--gain-bg); color: var(--gain); }
+    .badge-loss  { background: var(--loss-bg); color: var(--loss); }
+    .badge-warn  { background: var(--warn-bg); color: var(--warn); }
+    .badge-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* ============ POSITIONS PAGE ============ */
+    .positions-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .view-toggle {
+      display: flex;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      gap: 2px;
+    }
+    [data-theme="dark"] .view-toggle { background: #1e2430; }
+    .view-btn {
+      height: 30px;
+      padding: 0 13px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      font-family: var(--font-b);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .view-btn:hover { color: var(--text); }
+    [data-theme="light"] .view-btn.active {
+      background: #ffffff;
+      color: #0f172a;
+      border-color: #e2e8f0;
+      box-shadow: 0 1px 4px rgba(0,0,0,.10);
+    }
+    [data-theme="dark"] .view-btn.active {
+      background: #2d333b;
+      color: #e6edf3;
+      border-color: #444c56;
+      box-shadow: 0 1px 4px rgba(0,0,0,.30);
+    }
+
+    .filter-tabs { display: flex; gap: 4px; }
+    .filter-tab {
+      height: 32px;
+      padding: 0 15px;
+      border-radius: 20px;
+      font-family: var(--font-b);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    [data-theme="light"] .filter-tab {
+      color: #475569;
+      border: 1.5px solid #e2e8f0;
+      background: #ffffff;
+    }
+    [data-theme="light"] .filter-tab:hover {
+      color: #0f172a;
+      border-color: #94a3b8;
+      background: #f8fafc;
+    }
+    [data-theme="light"] .filter-tab.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    [data-theme="dark"] .filter-tab {
+      color: #8b949e;
+      border: 1.5px solid #3d444d;
+      background: #161b22;
+    }
+    [data-theme="dark"] .filter-tab:hover {
+      color: #cdd9e5;
+      border-color: #556070;
+      background: #21262d;
+    }
+    [data-theme="dark"] .filter-tab.active {
+      background: #14b8a6;
+      color: #021c1b;
+      border-color: #14b8a6;
+    }
+
+    .search-box {
+      flex: 1;
+      max-width: 260px;
+      position: relative;
+    }
+    .search-box svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      color: var(--faint);
+    }
+    .search-input {
+      width: 100%;
+      height: 34px;
+      padding: 0 12px 0 32px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border .15s;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    .search-input::placeholder { color: var(--faint); }
+
+    /* card grid */
+    .positions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .pos-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .pos-card:hover { border-color: var(--primary); transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+    .pos-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .pos-symbol {
+      font-family: var(--font-d);
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+    .pos-name { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .pos-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .pos-metric-label { font-size: 11px; color: var(--faint); margin-bottom: 2px; }
+    .pos-metric-value { font-family: var(--font-m); font-size: 14px; color: var(--text); }
+    .pos-pnl-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .pos-pnl-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width .4s ease;
+    }
+
+    /* ============ ADD POSITION ============ */
+    .add-pos-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 24px;
+      align-items: start;
+    }
+    .form-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+    .form-section-title {
+      font-family: var(--font-d);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 16px;
+      margin-top: 24px;
+    }
+    .form-section-title:first-child { margin-top: 0; }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .form-row.single { grid-template-columns: 1fr; }
+    .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .form-input, .form-select, .form-textarea {
+      height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border .15s, background .15s;
+      width: 100%;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--primary);
+      background: var(--card);
+    }
+    .form-input::placeholder { color: var(--faint); }
+    .form-textarea {
+      height: auto;
+      min-height: 80px;
+      padding: 10px 12px;
+      resize: vertical;
+    }
+    .form-hint { font-size: 11.5px; color: var(--faint); }
+
+    /* autocomplete */
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-list {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      z-index: 200;
+      max-height: 240px;
+      overflow-y: auto;
+      display: none;
+    }
+    .autocomplete-list.open { display: block; }
+    .autocomplete-item {
+      padding: 9px 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      transition: background .1s;
+    }
+    .autocomplete-item:hover, .autocomplete-item.highlighted { background: var(--surface); }
+    .autocomplete-symbol {
+      font-family: var(--font-m);
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--text);
+      min-width: 90px;
+    }
+    .autocomplete-name { font-size: 12px; color: var(--muted); }
+
+    /* preview panel */
+    .preview-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: calc(var(--header-h) + 16px);
+    }
+    .preview-title {
+      font-family: var(--font-d);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .preview-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border2);
+    }
+    .preview-row:last-of-type { border-bottom: none; }
+    .preview-key { font-size: 13px; color: var(--muted); }
+    .preview-val {
+      font-family: var(--font-m);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .preview-val.gain { color: var(--gain); }
+    .preview-val.loss { color: var(--loss); }
+    .preview-val.warn { color: var(--warn); }
+    .preview-rr {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      text-align: center;
+    }
+    .preview-rr-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .preview-rr-value {
+      font-family: var(--font-m);
+      font-size: 28px;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+    .rr-good { background: var(--gain-bg); }
+    .rr-good .preview-rr-value { color: var(--gain); }
+    .rr-ok { background: var(--warn-bg); }
+    .rr-ok .preview-rr-value { color: var(--warn); }
+    .rr-bad { background: var(--loss-bg); }
+    .rr-bad .preview-rr-value { color: var(--loss); }
+
+    /* ── Button system ───────────────────────────────────────────
+       Sizes:
+         standard  44 × auto   (forms, modals)
+         sm        36 × auto   (toolbars, detail actions)
+         xs        30 × auto   (inline / table rows)
+       Variants:  primary · secondary · ghost · danger
+    ──────────────────────────────────────────────────────────── */
+
+    /* shared base */
+    .btn-primary, .btn-secondary, .btn-ghost, .btn-danger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1.5px solid transparent;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-b);
+      font-size: 13.5px;
+      font-weight: 600;
+      letter-spacing: 0.1px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s, border-color .15s, color .15s, box-shadow .15s, opacity .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-primary:active, .btn-secondary:active,
+    .btn-ghost:active,  .btn-danger:active  { opacity: .82; transform: scale(.985); }
+
+    /* ── PRIMARY ── solid teal */
+    .btn-primary {
+      height: 44px;
+      padding: 0 22px;
+      width: 100%;
+      margin-top: 20px;
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    .btn-primary:hover {
+      background: var(--primary-h);
+      border-color: var(--primary-h);
+      box-shadow: 0 2px 10px rgba(15,118,110,.30);
+    }
+    /* light: slightly warmer shadow */
+    [data-theme="light"] .btn-primary:hover {
+      box-shadow: 0 2px 12px rgba(15,118,110,.35);
+    }
+    /* dark: glow feels better than shadow */
+    [data-theme="dark"] .btn-primary {
+      background: #14b8a6;
+      border-color: #14b8a6;
+      color: #021c1b;
+    }
+    [data-theme="dark"] .btn-primary:hover {
+      background: #2dd4bf;
+      border-color: #2dd4bf;
+      box-shadow: 0 0 0 3px rgba(45,212,191,.20);
+    }
+
+    /* size modifier — auto-width, no top margin */
+    .btn-primary.auto-w { width: auto; margin-top: 0; }
+    /* sm variant */
+    .btn-primary.btn-sm { height: 36px; padding: 0 18px; font-size: 13px; }
+
+    /* ── SECONDARY ── outlined */
+    .btn-secondary {
+      height: 36px;
+      padding: 0 18px;
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover {
+      background: var(--surface);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    [data-theme="light"] .btn-secondary {
+      border-color: #cbd5e1;
+      color: #334155;
+    }
+    [data-theme="light"] .btn-secondary:hover {
+      background: #f0fdfa;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    [data-theme="dark"] .btn-secondary {
+      border-color: #3d444d;
+      color: #cdd9e5;
+      background: transparent;
+    }
+    [data-theme="dark"] .btn-secondary:hover {
+      background: #1e2832;
+      border-color: #2dd4bf;
+      color: #2dd4bf;
+    }
+    /* size modifiers for secondary */
+    .btn-secondary.btn-sm { height: 30px; padding: 0 14px; font-size: 13px; }
+
+    /* modal pair — match primary height */
+    .modal-actions .btn-secondary {
+      height: 44px;
+      padding: 0 20px;
+    }
+
+    /* ── GHOST ── text-only, used for small inline actions */
+    .btn-ghost {
+      height: 30px;
+      padding: 0 12px;
+      background: transparent;
+      border-color: transparent;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .btn-ghost:hover { background: var(--surface); color: var(--text); }
+    [data-theme="dark"] .btn-ghost:hover { background: #21262d; color: #e6edf3; }
+
+    /* ── DANGER ── destructive red */
+    .btn-danger {
+      height: 36px;
+      padding: 0 18px;
+      background: transparent;
+      color: #dc2626;
+      border-color: #fca5a5;
+    }
+    .btn-danger:hover {
+      background: #fef2f2;
+      border-color: #dc2626;
+      color: #b91c1c;
+    }
+    [data-theme="dark"] .btn-danger {
+      color: #fca5a5;
+      border-color: #7f1d1d;
+      background: transparent;
+    }
+    [data-theme="dark"] .btn-danger:hover {
+      background: rgba(220,38,38,.15);
+      border-color: #f87171;
+      color: #f87171;
+    }
+
+    /* ============ POSITION DETAIL ============ */
+    .detail-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: color .15s;
+    }
+    .detail-back:hover { color: var(--text); }
+    .detail-back svg { width: 14px; height: 14px; }
+
+    .detail-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .detail-symbol {
+      font-family: var(--font-d);
+      font-weight: 700;
+      font-size: 30px;
+      letter-spacing: -0.7px;
+    }
+    .detail-name { color: var(--muted); margin-top: 2px; }
+    .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .detail-actions .btn-secondary,
+    .detail-actions .btn-danger { height: 44px; padding: 0 20px; }
+
+    /* price range bar */
+    .price-range-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+    .price-range-title {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--faint);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 20px;
+    }
+    .price-bar-track {
+      position: relative;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin: 0 6px;
+    }
+    .price-bar-risk {
+      position: absolute;
+      top: 0; bottom: 0;
+      background: var(--loss);
+      opacity: 0.35;
+      border-radius: 3px;
+    }
+    .price-bar-reward {
+      position: absolute;
+      top: 0; bottom: 0;
+      background: var(--gain);
+      opacity: 0.35;
+      border-radius: 3px;
+    }
+    .price-bar-current {
+      position: absolute;
+      top: 0; bottom: 0;
+      opacity: 0.7;
+      border-radius: 3px;
+    }
+    .price-bar-marker {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 2px solid var(--card);
+      z-index: 1;
+    }
+    .m-sl    { width: 12px; height: 12px; background: var(--loss); }
+    .m-entry { width: 12px; height: 12px; background: var(--primary); }
+    .m-ltp   { width: 16px; height: 16px; background: var(--text); }
+    .m-target{ width: 12px; height: 12px; background: var(--gain); }
+
+    .price-bar-markers { position: relative; height: 24px; margin: 0 6px; }
+    .price-bar-label {
+      position: absolute;
+      transform: translateX(-50%);
+      font-size: 11px;
+      white-space: nowrap;
+      top: 4px;
+    }
+    .price-bar-label.sl-lbl { color: var(--loss); }
+    .price-bar-label.entry-lbl { color: var(--primary); }
+    .price-bar-label.ltp-lbl { color: var(--text); font-weight: 600; font-family: var(--font-m); }
+    .price-bar-label.target-lbl { color: var(--gain); }
+
+    /* fixed entry / ltp row at bottom of price-range-section */
+    .price-bar-fixed-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px 40px;
+      row-gap: 24px;
+      column-gap: 40px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .price-bar-fixed-item {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .price-bar-fixed-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--faint);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .price-bar-fixed-value {
+      font-family: var(--font-m);
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      margin-bottom: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    /* each section is a column */
+    .detail-section {
+      padding: 20px 22px;
+      border-right: 1px solid var(--border);
+    }
+    .detail-section:last-child { border-right: none; }
+
+    .detail-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--faint);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      margin-bottom: 14px;
+    }
+
+    /* each row: label left, value right */
+    .detail-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border2);
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .dr-label {
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .dr-value {
+      font-family: var(--font-m);
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text);
+      text-align: right;
+    }
+    .dr-value.gain { color: var(--gain); }
+    .dr-value.loss { color: var(--loss); }
+
+    .detail-notes {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+    .detail-notes-label { font-size: 11.5px; font-weight: 500; color: var(--faint); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .detail-notes-text { font-size: 14px; color: var(--text); line-height: 1.7; }
+
+    /* LTP update inline */
+    .ltp-update {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 6px 6px 12px;
+    }
+    .ltp-update input {
+      width: 100px;
+      height: 30px;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: var(--font-m);
+      font-size: 14px;
+      outline: none;
+    }
+    .ltp-update-btn {
+      height: 30px;
+      padding: 0 14px;
+      border-radius: 6px;
+      border: 1.5px solid transparent;
+      font-family: var(--font-b);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    [data-theme="light"] .ltp-update-btn {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    [data-theme="light"] .ltp-update-btn:hover {
+      background: var(--primary-h);
+      border-color: var(--primary-h);
+      box-shadow: 0 2px 8px rgba(15,118,110,.30);
+    }
+    [data-theme="dark"] .ltp-update-btn {
+      background: #14b8a6;
+      color: #021c1b;
+      border-color: #14b8a6;
+    }
+    [data-theme="dark"] .ltp-update-btn:hover {
+      background: #2dd4bf;
+      border-color: #2dd4bf;
+      box-shadow: 0 0 0 3px rgba(45,212,191,.18);
+    }
+
+    /* close position modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-title { font-family: var(--font-d); font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .modal-desc { font-size: 13.5px; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+
+    /* wide edit modal */
+    .edit-modal-wide {
+      max-width: 860px;
+      width: 100%;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      max-height: 90vh;
+      overflow: hidden;
+    }
+    .edit-modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 24px 28px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .edit-modal-body {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .edit-col {
+      padding: 24px 24px;
+      border-right: 1px solid var(--border);
+    }
+    .edit-col:last-child { border-right: none; }
+    .edit-modal-footer {
+      display: flex;
+      gap: 10px;
+      padding: 16px 28px;
+      border-top: 1px solid var(--border);
+      justify-content: flex-end;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .edit-modal-footer .btn-secondary { height: 44px; padding: 0 20px; }
+    @media (max-width: 720px) {
+      .edit-modal-wide { max-height: 95vh; }
+      .edit-modal-body { grid-template-columns: 1fr; }
+      .edit-col { border-right: none; border-bottom: 1px solid var(--border); }
+      .edit-col:last-child { border-bottom: none; }
+    }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; align-items: center; }
+    .modal-actions .btn-secondary,
+    .modal-actions .btn-primary,
+    .modal-actions .modal-btn-danger { width: 100%; }
+
+    /* icon header */
+    .modal-icon-wrap { margin-bottom: 16px; }
+    .modal-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-icon svg { width: 22px; height: 22px; }
+    [data-theme="light"] .modal-icon-danger {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+    [data-theme="dark"] .modal-icon-danger {
+      background: rgba(220,38,38,.18);
+      color: #f87171;
+    }
+
+    /* delete info strip */
+    .delete-modal-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 4px;
+    }
+    [data-theme="light"] .delete-modal-info {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+    }
+    [data-theme="dark"] .delete-modal-info {
+      background: rgba(220,38,38,.10);
+      border: 1px solid rgba(220,38,38,.25);
+    }
+    .dmi-symbol {
+      font-family: var(--font-d);
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 1;
+    }
+    [data-theme="light"] .dmi-symbol { color: #b91c1c; }
+    [data-theme="dark"]  .dmi-symbol { color: #f87171; }
+    .dmi-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+    /* danger button full-width in modal */
+    .modal-btn-danger {
+      height: 44px;
+      padding: 0 22px;
+      font-size: 14px;
+    }
+
+    /* ============ EMPTY STATE ============ */
+    .empty-state {
+      text-align: center;
+      padding: 64px 24px;
+      color: var(--muted);
+    }
+    .empty-state svg { width: 48px; height: 48px; margin: 0 auto 16px; color: var(--faint); }
+    .empty-state h3 { font-family: var(--font-d); font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ============ TOAST ============ */
+    .toast-wrap {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      background: var(--text);
+      color: var(--bg);
+      padding: 11px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 13.5px;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      animation: toastIn .25s ease;
+      max-width: 320px;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ============ FOOTER ============ */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 20px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--faint);
+    }
+    .footer a { color: var(--primary); }
+
+    /* ============ RESPONSIVE ============ */
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-row { grid-template-columns: 1fr; }
+      .add-pos-layout { grid-template-columns: 1fr; }
+      .preview-card { position: static; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .detail-section { border-right: none; border-bottom: 1px solid var(--border); }
+      .detail-section:last-child { border-bottom: none; }
+    }
+    @media (max-width: 680px) {
+      .header-inner { padding: 0 16px; gap: 12px; }
+      .logo-text { display: none; }
+      .nav-tab { padding: 0 10px; font-size: 13px; }
+      .main { padding-left: 16px; padding-right: 16px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .positions-toolbar { flex-wrap: wrap; }
+      .form-row { grid-template-columns: 1fr; }
+      .form-row.triple { grid-template-columns: 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .detail-section { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+    @media (max-width: 440px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ============ UTILS ============ */
+    .hidden { display: none !important; }
+    .text-gain { color: var(--gain); }
+    .text-loss { color: var(--loss); }
+    .text-muted { color: var(--muted); }
+    .text-mono { font-family: var(--font-m); }
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo" onclick="switchTab('dashboard')">
+      <div class="logo-mark">SS</div>
+      <div class="logo-text">Swing<span>Space</span></div>
+    </div>
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="nav-tab" data-tab="positions" onclick="switchTab('positions')">Positions</button>
+      <button class="nav-tab" data-tab="add-position" onclick="switchTab('add-position')">Add Position</button>
+    </nav>
+    <div class="header-actions">
+      <!-- Import -->
+      <button class="icon-btn" title="Import Positions (JSON)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <input type="file" accept=".json" onchange="importJSON(event)" title="Import JSON">
+      </button>
+      <!-- Export -->
+      <button class="icon-btn" title="Export Positions (JSON)" onclick="exportJSON()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </button>
+      <!-- Theme -->
+      <button class="icon-btn" id="theme-btn" title="Toggle theme" onclick="toggleTheme()">
+        <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg id="icon-moon" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ MAIN ============ -->
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="tab-content active">
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <p id="dash-subtitle">Portfolio overview — loading…</p>
+    </div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <span class="chart-title">Cumulative P&amp;L</span>
+          <span class="chart-sub" id="pnl-chart-label"></span>
+        </div>
+        <div class="chart-wrap"><canvas id="chart-pnl"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <span class="chart-title">Sector Allocation</span>
+          <span class="chart-sub">By invested value</span>
+        </div>
+        <div class="chart-wrap-sm"><canvas id="chart-alloc"></canvas></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-card-header">
+        <span class="table-card-title">Open Positions</span>
+        <button class="btn-secondary btn-sm" onclick="switchTab('positions')">View All</button>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Qty</th>
+              <th>Entry</th>
+              <th>LTP</th>
+              <th>SL</th>
+              <th>Target</th>
+              <th>Invested</th>
+              <th>P&amp;L</th>
+              <th>R:R</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="dash-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- POSITIONS -->
+  <div id="tab-positions" class="tab-content">
+    <div class="page-header">
+      <h1>Positions</h1>
+      <p id="pos-subtitle"></p>
+    </div>
+    <div class="positions-toolbar">
+      <div class="view-toggle">
+        <button class="view-btn active" id="btn-list-view" onclick="setView('list')">
+          <svg style="width:14px;height:14px;vertical-align:-2px;margin-right:5px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>List
+        </button>
+        <button class="view-btn" id="btn-card-view" onclick="setView('card')">
+          <svg style="width:14px;height:14px;vertical-align:-2px;margin-right:5px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Cards
+        </button>
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">All</button>
+        <button class="filter-tab" data-filter="open" onclick="setFilter('open')">Open</button>
+        <button class="filter-tab" data-filter="closed" onclick="setFilter('closed')">Closed</button>
+      </div>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" type="text" placeholder="Search symbol…" id="pos-search" oninput="renderPositions()">
+      </div>
+    </div>
+    <div id="positions-list-view"></div>
+    <div id="positions-card-view" class="positions-grid hidden"></div>
+  </div>
+
+  <!-- ADD POSITION -->
+  <div id="tab-add-position" class="tab-content">
+    <div class="page-header">
+      <h1>Add Position</h1>
+      <p>Log a new swing trade with entry, risk, and reward levels</p>
+    </div>
+    <div class="add-pos-layout">
+      <div class="form-card">
+        <div class="form-section-title">Stock &amp; Setup</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Symbol *</label>
+            <div class="autocomplete-wrap">
+              <input class="form-input" id="ap-symbol" placeholder="e.g. RELIANCE" autocomplete="off"
+                oninput="onSymbolInput()" onkeydown="onSymbolKeydown(event)">
+              <div class="autocomplete-list" id="autocomplete-list"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Exchange</label>
+            <select class="form-select" id="ap-exchange">
+              <option value="NSE">NSE</option>
+              <option value="BSE">BSE</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row single">
+          <div class="form-group">
+            <label class="form-label">Company Name</label>
+            <input class="form-input" id="ap-name" placeholder="Auto-filled or enter manually">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Sector</label>
+            <select class="form-select" id="ap-sector">
+              <option value="">— Select —</option>
+              <option>Banking &amp; Finance</option>
+              <option>IT &amp; Technology</option>
+              <option>Pharma &amp; Healthcare</option>
+              <option>Auto &amp; Auto Ancillary</option>
+              <option>Energy &amp; Power</option>
+              <option>FMCG &amp; Consumer</option>
+              <option>Metals &amp; Mining</option>
+              <option>Cement &amp; Construction</option>
+              <option>Capital Goods</option>
+              <option>Chemicals</option>
+              <option>Telecom &amp; Media</option>
+              <option>Realty</option>
+              <option>Aviation &amp; Logistics</option>
+              <option>Textiles</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Entry Date</label>
+            <input class="form-input" id="ap-date" type="date">
+          </div>
+        </div>
+
+        <div class="form-section-title">Trade Levels</div>
+        <div class="form-row triple">
+          <div class="form-group">
+            <label class="form-label">Quantity *</label>
+            <input class="form-input" id="ap-qty" type="number" placeholder="100" min="1" oninput="updatePreview()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Entry Price ₹ *</label>
+            <input class="form-input" id="ap-entry" type="number" placeholder="0.00" step="0.05" oninput="updatePreview()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">LTP ₹</label>
+            <input class="form-input" id="ap-ltp" type="number" placeholder="= entry" step="0.05" oninput="updatePreview()">
+            <span class="form-hint">Leave blank to use entry price</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Stop Loss ₹ *</label>
+            <input class="form-input" id="ap-sl" type="number" placeholder="0.00" step="0.05" oninput="updatePreview()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target ₹ <span style="font-weight:400;color:var(--faint)">(optional)</span></label>
+            <input class="form-input" id="ap-target" type="number" placeholder="0.00" step="0.05" oninput="updatePreview()">
+          </div>
+        </div>
+
+        <div class="form-section-title">Notes</div>
+        <div class="form-row single">
+          <div class="form-group">
+            <textarea class="form-textarea" id="ap-notes" placeholder="Setup rationale, chart pattern, key levels…"></textarea>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="submitAddPosition()">Add Position</button>
+      </div>
+
+      <!-- Preview -->
+      <div class="preview-card">
+        <div class="preview-title">Trade Preview</div>
+        <div id="preview-content">
+          <div style="color:var(--faint);font-size:13px;text-align:center;padding:32px 0">
+            Fill in the form to see a live preview
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POSITION DETAIL -->
+  <div id="tab-position-detail" class="tab-content">
+    <div class="detail-back" onclick="backFromDetail()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to Positions
+    </div>
+    <div id="detail-content"></div>
+  </div>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <p>Vibe coded by <strong>Mukuldev S S</strong> &nbsp;·&nbsp; Swing Space &copy; 2025 &nbsp;·&nbsp; Data stored locally in your browser</p>
+</footer>
+
+<!-- ============ CLOSE MODAL ============ -->
+<div class="modal-overlay hidden" id="close-modal">
+  <div class="modal">
+    <div class="modal-title">Close Position</div>
+    <div class="modal-desc" id="close-modal-desc">Enter the exit price to close this trade and record P&amp;L.</div>
+    <div class="form-group">
+      <label class="form-label">Exit Price ₹</label>
+      <input class="form-input" id="close-exit-price" type="number" step="0.05" placeholder="0.00">
+    </div>
+    <div class="form-group" style="margin-top:12px">
+      <label class="form-label">Exit Date</label>
+      <input class="form-input" id="close-exit-date" type="date">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary auto-w" onclick="confirmClosePosition()">Close Trade</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DELETE MODAL ============ -->
+<div class="modal-overlay hidden" id="delete-modal">
+  <div class="modal">
+    <div class="modal-icon-wrap">
+      <div class="modal-icon modal-icon-danger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+      </div>
+    </div>
+    <div class="modal-title">Delete Position</div>
+    <div class="modal-desc" id="delete-modal-desc">This position will be permanently removed. This action cannot be undone.</div>
+    <div class="delete-modal-info" id="delete-modal-info"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-danger modal-btn-danger" onclick="confirmDeletePosition()">Delete Position</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TOAST ============ -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<!-- ============ EDIT MODAL ============ -->
+<div class="modal-overlay hidden" id="edit-modal">
+  <div class="modal edit-modal-wide">
+    <div class="edit-modal-header">
+      <div>
+        <div class="modal-title">Edit Position</div>
+        <div class="modal-desc" style="margin-bottom:0">Update trade details, levels, or notes</div>
+      </div>
+      <button class="icon-btn" onclick="closeEditModal()" title="Close" style="flex-shrink:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="edit-modal-body">
+      <!-- Column 1: Stock & Setup -->
+      <div class="edit-col">
+        <div class="form-section-title">Stock &amp; Setup</div>
+        <div class="form-group">
+          <label class="form-label">Symbol *</label>
+          <input class="form-input" id="em-symbol" placeholder="RELIANCE" style="text-transform:uppercase">
+        </div>
+        <div class="form-row" style="margin-bottom:0">
+          <div class="form-group">
+            <label class="form-label">Exchange</label>
+            <select class="form-select" id="em-exchange">
+              <option value="NSE">NSE</option>
+              <option value="BSE">BSE</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Entry Date</label>
+            <input class="form-input" id="em-date" type="date">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:16px">
+          <label class="form-label">Company Name</label>
+          <input class="form-input" id="em-name" placeholder="Auto or enter manually">
+        </div>
+        <div class="form-group" style="margin-top:16px">
+          <label class="form-label">Sector</label>
+          <select class="form-select" id="em-sector">
+            <option value="">— Select —</option>
+            <option>Banking &amp; Finance</option>
+            <option>IT &amp; Technology</option>
+            <option>Pharma &amp; Healthcare</option>
+            <option>Auto &amp; Auto Ancillary</option>
+            <option>Energy &amp; Power</option>
+            <option>FMCG &amp; Consumer</option>
+            <option>Metals &amp; Mining</option>
+            <option>Cement &amp; Construction</option>
+            <option>Capital Goods</option>
+            <option>Chemicals</option>
+            <option>Telecom &amp; Media</option>
+            <option>Realty</option>
+            <option>Aviation &amp; Logistics</option>
+            <option>Textiles</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Column 2: Levels -->
+      <div class="edit-col">
+        <div class="form-section-title">Trade Levels</div>
+        <div class="form-group">
+          <label class="form-label">Quantity *</label>
+          <input class="form-input" id="em-qty" type="number" placeholder="100" min="1">
+        </div>
+        <div class="form-group" style="margin-top:16px">
+          <label class="form-label">Entry Price ₹ *</label>
+          <input class="form-input" id="em-entry" type="number" step="0.05" placeholder="0.00">
+        </div>
+        <div class="form-group" style="margin-top:16px">
+          <label class="form-label">LTP ₹</label>
+          <input class="form-input" id="em-ltp" type="number" step="0.05" placeholder="0.00">
+        </div>
+        <div class="form-group" style="margin-top:16px">
+          <label class="form-label">Stop Loss ₹ *</label>
+          <input class="form-input" id="em-sl" type="number" step="0.05" placeholder="0.00">
+        </div>
+        <div class="form-group" style="margin-top:16px">
+          <label class="form-label">Target ₹ <span style="font-weight:400;color:var(--faint)">(optional)</span></label>
+          <input class="form-input" id="em-target" type="number" step="0.05" placeholder="0.00">
+        </div>
+
+        <!-- Exit fields — shown for closed positions only -->
+        <div id="em-exit-row" class="hidden" style="margin-top:16px">
+          <div class="divider" style="margin:0 0 16px"></div>
+          <div class="form-section-title" style="margin-top:0">Exit Details</div>
+          <div class="form-group">
+            <label class="form-label">Exit Price ₹</label>
+            <input class="form-input" id="em-exit-price" type="number" step="0.05" placeholder="0.00">
+          </div>
+          <div class="form-group" style="margin-top:16px">
+            <label class="form-label">Exit Date</label>
+            <input class="form-input" id="em-exit-date" type="date">
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 3: Notes -->
+      <div class="edit-col">
+        <div class="form-section-title">Notes</div>
+        <textarea class="form-textarea" id="em-notes" style="min-height:200px"
+          placeholder="Setup rationale, chart pattern, key levels…"></textarea>
+      </div>
+    </div>
+
+    <div class="edit-modal-footer">
+      <button class="btn-secondary" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-primary auto-w" onclick="submitEditPosition()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCRIPTS ============ -->
+<script src="js/stocks.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
